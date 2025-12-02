@@ -62,3 +62,28 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep-results.sarif
+  sca:
+    name: OWASP Dependency-Check SCA
+    needs: build 
+    runs-on: ubuntu-latest 
+
+    container:
+      image: maven:3.9.11-eclipse-temurin-21-noble 
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4 
+      
+      - name: make mvnw ex 
+        run: chmod +x ./mvnw 
+      
+      - name: run OWASP Dependency-check
+        run: |-
+          ./mvnw -B dependency-check:check 
+      
+      - name: upload SCA report 
+        if: always()
+        uses: actions/upload-artifact@v4 
+        with:
+          name: check-report 
+          path: target/dependency-check-report.html
