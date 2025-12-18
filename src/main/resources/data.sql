@@ -6,7 +6,7 @@ INSERT INTO USERS (id, username, password, role)
 VALUES (2, 'student', 'password', 'STUDENT');
 ALTER TABLE USERS ALTER COLUMN ID RESTART WITH 3;
 
--- Студенты
+-- Студентыdentification and Authentication Failures
 INSERT INTO STUDENTS (id, name, email, user_id)
 VALUES (1, 'Alice', 'alice@example.com', 2),
        (2, 'Bob', 'bob@example.com', NULL);
