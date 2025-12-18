@@ -6,13 +6,13 @@ spring:
       enabled: true
       path: /h2-console
       settings:
-        web-allow-others: true
+        web-allow-others: false # A05 - только локальный доступ
   datasource:
     url: jdbc:h2:mem:courseapp;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
     password:
   jpa:
-    show-sql: true
+    show-sql: false # A09 Security logging and monitoring failures - отключение логирования SQL запросов чтобы в конечной версии (продной) не светить
     hibernate:
       ddl-auto: update
     defer-datasource-initialization: true
@@ -20,10 +20,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: "health,info" # A05 - ограничение доступных эндпоинтов (только "безопасные" на ружу)
 server:
   error:
-    include-stacktrace: ALWAYS
+    include-stacktrace: NEVER # A05 - отключение показа стектрейсов в ошибках. Отображает стек вызовов методов, что является небезопасным
 app:
   plugin:
     url:

@@ -1,7 +1,11 @@
 package ru.mtuci.coursemanagement.controller;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,11 +19,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ru.mtuci.coursemanagement.model.Course;
 import ru.mtuci.coursemanagement.repository.CourseRepository;
 import ru.mtuci.coursemanagement.service.CourseService;
-
-import java.util.List;
 
 @Slf4j
 @Controller
@@ -28,6 +33,12 @@ import java.util.List;
 public class CourseController {
     private final CourseRepository repo;
     private final CourseService service;
+
+    private static final Set<String> ALLOWED_IMPORT_HOSTS = Set.of(
+            "127.0.0.1",
+            "localhost"
+    );
+
 
     @GetMapping("/courses")
     public String coursesPage(Model model) {
@@ -75,10 +86,33 @@ public class CourseController {
 
     @GetMapping("/api/courses/import")
     @ResponseBody
-    public String importFromUrl(@RequestParam String url) {
+    public ResponseEntity<String> importFromUrl(@RequestParam String url) {
+        // A10: SSRF fix - ограничение импортов по белому списку
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            return ResponseEntity.badRequest().body("Invalid URL");
+        }
+
+        String scheme = uri.getScheme();
+        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+            return ResponseEntity.badRequest().body("Only HTTP and HTTPS protocols are allowed");
+        }
+
+        String host = uri.getHost();
+        if (host == null || !ALLOWED_IMPORT_HOSTS.contains(host)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Host is not allowed");
+        }
+
         RestTemplate rt = new RestTemplate();
-        String json = rt.getForObject(url, String.class);
-        log.info("Импортированы данные курсов (raw): {}", json);
-        return "OK";
+        try {
+            String json = rt.getForObject(uri, String.class);
+            log.info("Импортированы данные курсов (raw): {}", json);
+            return ResponseEntity.ok("OK");
+        } catch (Exception e) {
+            log.warn("Ошибка при импорте данных курсов с {}: {}", host, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body("Import failed");
+        }
     }
 }

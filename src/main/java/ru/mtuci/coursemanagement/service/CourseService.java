@@ -1,13 +1,14 @@
 package ru.mtuci.coursemanagement.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 import ru.mtuci.coursemanagement.model.Course;
 import ru.mtuci.coursemanagement.repository.CourseRepository;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +32,9 @@ public class CourseService {
         repo.deleteById(id);
     }
 
+    // A03: Injection (SQLi) Введение параметризации 
     public List<Course> searchByTitle(String title) {
-        String sql = "SELECT id, title, description, teacher_id FROM courses WHERE title = '" + title + "'";
+        String sql = "SELECT id, title, description, teacher_id FROM courses WHERE title = ?";
         RowMapper<Course> rm = (rs, i) -> new Course(
                 rs.getLong("id"),
                 rs.getString("title"),

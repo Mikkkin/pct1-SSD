@@ -1,49 +1,31 @@
 package ru.mtuci.coursemanagement.controller;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import ru.mtuci.coursemanagement.model.User;
 import ru.mtuci.coursemanagement.service.UserService;
-
-import java.util.Optional;
 
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 public class AuthController {
     private final UserService users;
+    private final PasswordEncoder passwordEncoder; // FIX A02 Cryptographic Failures
 
     @GetMapping("/login")
     public String loginPage() {
         return "login";
     }
 
-    @PostMapping("/login")
-    public String doLogin(@RequestParam String username,
-                          @RequestParam String password,
-                          HttpServletRequest req,
-                          Model model) {
-        Optional<User> opt = users.findByUsername(username);
-        if (opt.isPresent()) {
-            User u = opt.get();
-            if (u.getPassword().equals(password)) {
-                log.info("User {} logged in with password {}", username, password);
-                HttpSession s = req.getSession(true);
-                s.setAttribute("username", username);
-                s.setAttribute("role", u.getRole());
-                return "redirect:/";
-            }
-        }
-        model.addAttribute("error", "Неверные учетные данные");
-        return "login";
-    }
+    // Удалил кастомную форму авторизации. Функционал авторизации выполняют другие файлы
 
     @GetMapping("/logout")
     public String logout(HttpServletRequest req) {
@@ -54,9 +36,11 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(@RequestParam String username,
-                           @RequestParam String password,
-                           @RequestParam(required = false, defaultValue = "STUDENT") String role) {
-        users.save(new User(null, username, password, role));
+                           @RequestParam String password) {
+        String encoded = passwordEncoder.encode(password);
+        // A01 Broken Access Control (все OWASP по 2021 редакции) - роль по умолчанию поставлена STUDENT, а не на выбор
+        // Также тут используется захешированный пароль (от фикса A02)
+        users.save(new User(null, username, encoded, "STUDENT"));
         return "redirect:/login";
     }
 }
