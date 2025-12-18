@@ -1,19 +1,18 @@
 package ru.mtuci.coursemanagement.controller;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import ru.mtuci.coursemanagement.service.PluginLoader;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
 public class IndexController {
-    private final PluginLoader loader;
 
     @GetMapping("/")
     public String index(Model model) {
-        loader.tryLoad();
+        // A08 Software and Data Integrity Failures - убрал загрузчика плагина из вызова
         return "index";
     }
 }
